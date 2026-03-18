@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    --background: 0 0% 5%;
+    --foreground: 40 20% 94%;
+    --card: 0 0% 8%;
+    --card-foreground: 40 20% 94%;
+    --border: 0 0% 100% / 0.07;
+    --input: 0 0% 10%;
+    --ring: 40 20% 85%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 30 5% 45%;
+    --accent-color: #e8e0d0;
+  }
+
+  * { border-color: rgba(255,255,255,0.07); }
+
+  body {
+    @apply bg-base-900 text-accent font-mono;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-base-500 rounded; }
+}
+
+@layer utilities {
+  .text-muted { color: #8a8680; }
+  .text-faint  { color: #555250; }
+  .border-subtle { border-color: rgba(255,255,255,0.07); }
+  .border-subtle-hover { border-color: rgba(255,255,255,0.13); }
+  .bg-card { background: #141414; }
+  .bg-surface { background: #1a1a1a; }
+  .bg-elevated { background: #222222; }
+}
