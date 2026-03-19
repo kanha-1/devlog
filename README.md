@@ -1,24 +1,26 @@
 # devlog — Personal Daily Work Log
 
-Dark-themed React app to track your work as a developer.
-Built with React + Vite + Tailwind CSS + shadcn/ui + Supabase.
+Dark/light themed React app to track your daily work as a developer.
+**React + Vite + Tailwind CSS + shadcn/ui + Supabase + PWA**
 
 ---
 
 ## Quick Start
 
-### 1. Install dependencies
 ```bash
 npm install
+cp .env.example .env   # fill in your Supabase URL + anon key
+npm run dev
 ```
 
-### 2. Configure Supabase
-```bash
-cp .env.example .env
-```
-Fill in your Supabase URL and anon key in `.env`.
+Open http://localhost:5173
 
-Run this SQL once in your Supabase SQL Editor:
+---
+
+## Supabase setup
+
+Run once in your Supabase SQL Editor:
+
 ```sql
 create table if not exists tasks (
   id          text primary key,
@@ -36,27 +38,57 @@ alter table tasks enable row level security;
 create policy "allow all" on tasks for all using (true) with check (true);
 ```
 
-### 3. Run
-```bash
-npm run dev
-```
+---
 
-Open http://localhost:5173
+## Install as PWA on iPhone
+
+1. Build first: `npm run build`
+2. Deploy to Vercel/Netlify (drag the `dist/` folder)
+3. Open the deployed URL in **Safari on iPhone**
+4. Tap the **Share** button → **"Add to Home Screen"**
+5. Tap **Add** — devlog installs like a native app
+6. Open from home screen → allow notifications when prompted
+
+> Requires iOS 16.4+ for push notifications
+
+---
+
+## Features
+
+| Feature | Details |
+|---|---|
+| Dark + Light mode | Toggle in topbar, persists to localStorage |
+| Mobile responsive | Sidebar drawer on mobile, bottom nav bar |
+| PWA | Installs on iPhone/Android, works offline |
+| Notifications | Daily reminders at custom time, iOS 16.4+ |
+| Date-wise tasks | Mini calendar, jump between any day |
+| 4 task statuses | Todo → In Progress → In Review → Done |
+| Tags | feat / bug / review / infra / meet / doc / other |
+| Notes per task | Add context or PR links inline |
+| Day summary | Copy as plain text or markdown for standups |
+| History view | All days with stats, expandable |
+| Supabase sync | Tasks sync across all devices |
+| Export JSON | Full data backup anytime |
 
 ---
 
 ## Build for production
+
 ```bash
 npm run build
 ```
-Deploy the `dist/` folder to Vercel or Netlify.
+
+Deploy `dist/` to Vercel or Netlify for a permanent URL.
+The PWA service worker and offline caching is automatically configured.
 
 ---
 
 ## Tech Stack
+
 - React 18 + Vite 5
 - Tailwind CSS v3
-- shadcn/ui (Radix UI primitives)
-- Supabase JS v2
+- shadcn/ui (Radix UI primitives — Dialog, Tooltip, etc.)
 - Lucide React icons
+- Supabase JS v2
+- vite-plugin-pwa + Workbox
 - JetBrains Mono + Syne (Google Fonts)

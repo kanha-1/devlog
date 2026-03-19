@@ -11,12 +11,12 @@ const TooltipContent = React.forwardRef(({ className, sideOffset = 4, ...props }
     ref={ref}
     sideOffset={sideOffset}
     className={cn(
-      "z-50 overflow-hidden rounded-md border border-white/10 bg-base-600 px-2.5 py-1 text-[10px] text-accent shadow-md animate-in fade-in-0 zoom-in-95",
+      "z-50 overflow-hidden rounded-md border border-subtle bg-elevated px-2.5 py-1 text-[10px] text-primary shadow-md animate-in fade-in-0 zoom-in-95",
       className
     )}
     {...props}
   />
 ))
-TooltipContent.displayName = TooltipPrimitive.Content.displayName
+TooltipContent.displayName = "TooltipContent"
 
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }

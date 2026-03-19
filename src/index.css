@@ -6,27 +6,65 @@
 
 @layer base {
   :root {
-    --accent-color: #e8e0d0;
+    /* Dark theme tokens */
+    --bg-primary:   #0d0d0d;
+    --bg-card:      #141414;
+    --bg-surface:   #1a1a1a;
+    --bg-elevated:  #222222;
+    --bg-hover:     #2a2a2a;
+    --text-primary: #f0ede8;
+    --text-muted:   #8a8680;
+    --text-faint:   #555250;
+    --border:       rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.13);
+    --accent:       #e8e0d0;
   }
 
-  * { border-color: rgba(255,255,255,0.07); }
+  .light {
+    --bg-primary:   #fafaf9;
+    --bg-card:      #ffffff;
+    --bg-surface:   #f4f3f1;
+    --bg-elevated:  #eae8e4;
+    --bg-hover:     #d6d3ce;
+    --text-primary: #1a1917;
+    --text-muted:   #5c5955;
+    --text-faint:   #9c9894;
+    --border:       rgba(0,0,0,0.07);
+    --border-hover: rgba(0,0,0,0.13);
+    --accent:       #1a1917;
+  }
+
+  * {
+    border-color: var(--border);
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
 
   body {
-    @apply bg-base-900 text-accent font-mono;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
     -webkit-font-smoothing: antialiased;
   }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-base-500 rounded; }
+  ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 2px; }
 }
 
 @layer utilities {
-  .text-muted { color: #8a8680; }
-  .text-faint  { color: #555250; }
-  .border-subtle { border-color: rgba(255,255,255,0.07); }
-  .border-subtle-hover { border-color: rgba(255,255,255,0.13); }
-  .bg-card { background: #141414; }
-  .bg-surface { background: #1a1a1a; }
-  .bg-elevated { background: #222222; }
+  .bg-primary   { background: var(--bg-primary); }
+  .bg-card      { background: var(--bg-card); }
+  .bg-surface   { background: var(--bg-surface); }
+  .bg-elevated  { background: var(--bg-elevated); }
+  .bg-hover     { background: var(--bg-hover); }
+  .text-primary { color: var(--text-primary); }
+  .text-muted   { color: var(--text-muted); }
+  .text-faint   { color: var(--text-faint); }
+  .border-subtle       { border-color: var(--border); }
+  .border-subtle-hover { border-color: var(--border-hover); }
+  .accent-text  { color: var(--accent); }
 }
+
+/* iOS safe area support */
+.safe-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-pt { padding-top: env(safe-area-inset-top, 0px); }

@@ -2,28 +2,49 @@ import { useState, useEffect, useMemo } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
+import BottomNav from "./components/BottomNav"
 import TodayView from "./components/TodayView"
 import HistoryView from "./components/HistoryView"
 import SummaryModal from "./components/SummaryModal"
+import NotificationSettings from "./components/NotificationSettings"
 import { loadTasks, saveTask, deleteTask as deleteStorage, isSupabaseConfigured } from "./lib/storage"
 import { todayStr, uid } from "./lib/utils"
+import { getTheme, toggleTheme, applyTheme } from "./lib/theme"
+import { scheduleDailyReminder, getReminderSettings } from "./lib/notifications"
 
 export default function App() {
-  const [tasks,        setTasks]        = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [view,         setView]         = useState('today')
-  const [tagFilter,    setTagFilter]    = useState('all')
-  const [selectedDate, setSelectedDate] = useState(todayStr())
-  const [search,       setSearch]       = useState('')
-  const [showSummary,  setShowSummary]  = useState(false)
+  const [tasks,         setTasks]         = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [view,          setView]          = useState('today')
+  const [tagFilter,     setTagFilter]     = useState('all')
+  const [selectedDate,  setSelectedDate]  = useState(todayStr())
+  const [search,        setSearch]        = useState('')
+  const [showSummary,   setShowSummary]   = useState(false)
+  const [showNotifSettings, setShowNotifSettings] = useState(false)
+  const [sidebarOpen,   setSidebarOpen]   = useState(false)
+  const [theme,         setTheme]         = useState(getTheme())
+  const [showMobileSearch, setShowMobileSearch] = useState(false)
 
-  // Load
+  // Apply theme on mount
+  useEffect(() => { applyTheme(theme) }, [])
+
+  // Load tasks
   useEffect(() => {
     loadTasks()
-      .then(data => setTasks(data))
+      .then(data => {
+        setTasks(data)
+        // Restore scheduled reminder if enabled
+        const s = getReminderSettings()
+        if (s.enabled) scheduleDailyReminder(s.hour, s.minute, () => tasks)
+      })
       .catch(() => setTasks([]))
       .finally(() => setLoading(false))
   }, [])
+
+  const handleToggleTheme = () => {
+    const next = toggleTheme()
+    setTheme(next)
+  }
 
   // Mutations
   const addTask = async ({ title, tag, priority }) => {
@@ -57,7 +78,6 @@ export default function App() {
     await saveTask(next.find(t => t.id === id), next)
   }
 
-  // Filtered tasks for today view
   const filteredTasks = useMemo(() => {
     let t = tasks.filter(x => x.date === selectedDate)
     if (tagFilter !== 'all') t = t.filter(x => x.tag === tagFilter)
@@ -68,7 +88,6 @@ export default function App() {
     return t
   }, [tasks, selectedDate, tagFilter, search])
 
-  // Export
   const exportData = () => {
     const blob = new Blob([JSON.stringify({ tasks, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
@@ -79,7 +98,9 @@ export default function App() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen overflow-hidden bg-base-900">
+      <div className="flex h-screen overflow-hidden bg-primary">
+
+        {/* Sidebar */}
         <Sidebar
           view={view}
           tagFilter={tagFilter}
@@ -89,8 +110,11 @@ export default function App() {
           onViewChange={setView}
           onTagFilter={setTagFilter}
           onSelectDate={d => { setSelectedDate(d); setView('today') }}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
         />
 
+        {/* Main */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <Topbar
             selectedDate={selectedDate}
@@ -100,9 +124,26 @@ export default function App() {
             onSearch={setSearch}
             onSummary={() => setShowSummary(true)}
             onExport={exportData}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            onOpenSettings={() => setShowNotifSettings(true)}
           />
 
-          <main className="flex-1 overflow-y-auto p-6">
+          {/* Mobile search bar */}
+          {showMobileSearch && (
+            <div className="md:hidden px-4 py-2 border-b border-subtle bg-primary animate-slide-up">
+              <input
+                autoFocus
+                className="w-full h-8 rounded-lg border border-subtle bg-surface px-3 text-xs text-primary placeholder:text-faint focus:outline-none focus:border-subtle-hover"
+                placeholder="search tasks..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onBlur={() => { if (!search) setShowMobileSearch(false) }}
+              />
+            </div>
+          )}
+
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
             {view === 'today' ? (
               <TodayView
                 tasks={filteredTasks}
@@ -122,11 +163,26 @@ export default function App() {
           </main>
         </div>
 
+        {/* Mobile bottom nav */}
+        <BottomNav
+          view={view}
+          tasks={tasks}
+          onViewChange={setView}
+          onMenuOpen={() => setSidebarOpen(true)}
+          onSearchOpen={() => setShowMobileSearch(s => !s)}
+        />
+
+        {/* Modals */}
         <SummaryModal
           date={selectedDate}
           tasks={tasks.filter(t => t.date === selectedDate)}
           open={showSummary}
           onClose={() => setShowSummary(false)}
+        />
+        <NotificationSettings
+          open={showNotifSettings}
+          onClose={() => setShowNotifSettings(false)}
+          getTasks={() => tasks}
         />
       </div>
     </TooltipProvider>
