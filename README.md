@@ -17,27 +17,6 @@ Open http://localhost:5173
 
 ---
 
-## Supabase setup
-
-Run once in your Supabase SQL Editor:
-
-```sql
-create table if not exists tasks (
-  id          text primary key,
-  title       text not null,
-  tag         text not null default 'feat',
-  priority    text not null default 'med',
-  status      text not null default 'todo',
-  date        text not null,
-  done        boolean not null default false,
-  note        text default '',
-  created_at  timestamptz default now(),
-  updated_at  timestamptz default now()
-);
-alter table tasks enable row level security;
-create policy "allow all" on tasks for all using (true) with check (true);
-```
-
 ---
 
 ## Install as PWA on iPhone
