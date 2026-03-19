@@ -20,7 +20,7 @@ export default function AddTaskBar({ onAdd }) {
   }
 
   return (
-    <div className="flex gap-2 mb-6 rounded-xl border border-subtle bg-base-800 px-3 py-2 items-center focus-within:border-border-hover transition-colors">
+    <div className="flex gap-2 mb-6 rounded-xl border border-subtle bg-card px-3 py-2 items-center focus-within:border-subtle-hover transition-colors">
       <Input
         ref={ref}
         className="flex-1 border-none bg-transparent px-0 focus:ring-0 h-7 text-[13px]"
@@ -30,7 +30,7 @@ export default function AddTaskBar({ onAdd }) {
         placeholder="Add a task...  e.g. fix null pointer in auth service"
         autoFocus
       />
-      <Select value={tag} onChange={e => setTag(e.target.value)} className="h-7 text-[11px]">
+      <Select value={tag} onChange={e => setTag(e.target.value)} className="h-7 text-[11px] hidden sm:block">
         {TAGS.map(t => <option key={t} value={t}>{t}</option>)}
       </Select>
       <Select value={priority} onChange={e => setPriority(e.target.value)} className="h-7 text-[11px]">
