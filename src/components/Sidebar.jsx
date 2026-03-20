@@ -1,4 +1,4 @@
-import { Database, X, Flame, Target } from "lucide-react"
+import { Database, X, Flame, Target, LogOut } from "lucide-react"
 import MiniCalendar from "./MiniCalendar"
 import { todayStr, calcStreak, cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
@@ -28,19 +28,33 @@ function NavItem({ active, onClick, dot, children, badge }) {
   )
 }
 
-export default function Sidebar({ view, tagFilter, selectedDate, tasks, isSupabase, onViewChange, onTagFilter, onSelectDate, mobileOpen, onMobileClose }) {
+export default function Sidebar({
+  view, tagFilter, selectedDate, tasks, isSupabase,
+  session, onViewChange, onTagFilter, onSelectDate,
+  mobileOpen, onMobileClose, onSignOut
+}) {
   const todayOpen = tasks.filter(t => t.date === todayStr() && !t.done).length
   const taskDates = new Set(tasks.map(t => t.date))
   const streak    = calcStreak(tasks)
 
+  const userName = session?.user?.user_metadata?.user_name
+    || session?.user?.email
+    || null
+
+  const userInitial = userName ? userName[0].toUpperCase() : null
+
   return (
     <>
-      {mobileOpen && <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={onMobileClose} />}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={onMobileClose} />
+      )}
+
       <aside className={cn(
         "flex-shrink-0 bg-card border-r border-subtle flex flex-col overflow-y-auto z-50 transition-transform duration-300",
         "hidden md:flex md:w-56",
         mobileOpen && "fixed inset-y-0 left-0 w-72 flex",
       )}>
+
         {/* Logo */}
         <div className="px-4 py-5 border-b border-subtle flex items-center justify-between">
           <div>
@@ -48,7 +62,9 @@ export default function Sidebar({ view, tagFilter, selectedDate, tasks, isSupaba
             <div className="text-[9px] text-faint uppercase tracking-widest mt-0.5">daily work log</div>
           </div>
           {mobileOpen && (
-            <button onClick={onMobileClose} className="text-faint hover:text-primary p-1 rounded md:hidden"><X size={16} /></button>
+            <button onClick={onMobileClose} className="text-faint hover:text-primary p-1 rounded md:hidden">
+              <X size={16} />
+            </button>
           )}
         </div>
 
@@ -73,9 +89,15 @@ export default function Sidebar({ view, tagFilter, selectedDate, tasks, isSupaba
         {/* Views */}
         <div className="px-2 pt-2 pb-1">
           <p className="text-[9px] text-faint uppercase tracking-widest px-2 mb-1.5">views</p>
-          <NavItem active={view==='today'} onClick={() => { onViewChange('today'); onMobileClose?.() }} dot="bg-teal-400" badge={todayOpen}>Today</NavItem>
-          <NavItem active={view==='history'} onClick={() => { onViewChange('history'); onMobileClose?.() }} dot="bg-purple-400">History</NavItem>
-          <NavItem active={view==='report'} onClick={() => { onViewChange('report'); onMobileClose?.() }} dot="bg-blue-400">Report</NavItem>
+          <NavItem active={view==='today'} onClick={() => { onViewChange('today'); onMobileClose?.() }} dot="bg-teal-400" badge={todayOpen}>
+            Today
+          </NavItem>
+          <NavItem active={view==='history'} onClick={() => { onViewChange('history'); onMobileClose?.() }} dot="bg-purple-400">
+            History
+          </NavItem>
+          <NavItem active={view==='report'} onClick={() => { onViewChange('report'); onMobileClose?.() }} dot="bg-blue-400">
+            Report
+          </NavItem>
         </div>
 
         <Separator className="my-2" />
@@ -97,11 +119,27 @@ export default function Sidebar({ view, tagFilter, selectedDate, tasks, isSupaba
           onSelectDate={d => { onSelectDate(d); onViewChange('today'); onMobileClose?.() }}
         />
 
+        {/* User info */}
+        {session && userName && (
+          <div className="mx-3 mt-2 flex items-center gap-2 rounded-lg bg-surface px-3 py-2">
+            <div className="w-5 h-5 rounded-full bg-teal-400/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-[9px] text-teal-400 font-bold">{userInitial}</span>
+            </div>
+            <span className="text-[10px] text-faint flex-1 truncate">{userName}</span>
+            <button onClick={onSignOut} className="text-faint hover:text-red-400 transition-colors flex-shrink-0" title="Sign out">
+              <LogOut size={11} />
+            </button>
+          </div>
+        )}
+
         {/* Storage indicator */}
-        <div className="mx-3 mb-3 mt-2 flex items-center gap-2 rounded-lg bg-surface px-3 py-2">
+        <div className="mx-3 mb-3 mt-1.5 flex items-center gap-2 rounded-lg bg-surface px-3 py-2">
           <Database size={10} className={isSupabase ? "text-green-400" : "text-amber-400"} />
-          <span className="text-[10px] text-faint">{isSupabase ? "Supabase · synced" : "localStorage · local only"}</span>
+          <span className="text-[10px] text-faint">
+            {isSupabase ? "Supabase · synced" : "localStorage · local only"}
+          </span>
         </div>
+
       </aside>
     </>
   )

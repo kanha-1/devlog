@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { CheckSquare, Square, Trash2, StickyNote, Pin, PinOff, Plus, X } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { CheckSquare, Square, Trash2, StickyNote, Pin, PinOff, Plus, X, Pencil, Check } from "lucide-react"
 import TaskChip from "./TaskChip"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
@@ -8,27 +8,151 @@ import { PRIORITY_META, STATUS_META, cn, uid } from "@/lib/utils"
 const STATUS_CYCLE = ['todo','inprogress','review','done']
 const STATUS_SHORT = { todo:'todo', inprogress:'wip', review:'review', done:'done' }
 
-export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks }) {
-  const [showNote,     setShowNote]     = useState(false)
-  const [noteVal,      setNoteVal]      = useState(task.note || '')
-  const [showSubs,     setShowSubs]     = useState(false)
-  const [newSub,       setNewSub]       = useState('')
-  const p = PRIORITY_META[task.priority]
-  const s = STATUS_META[task.status]
-  const others = STATUS_CYCLE.filter(x => x !== task.status)
+function EditableTitle({ value, done, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [val, setVal]         = useState(value)
+  const inputRef              = useRef()
+
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+  useEffect(() => { setVal(value) }, [value])
+
+  const save = () => {
+    const trimmed = val.trim()
+    if (trimmed && trimmed !== value) onSave(trimmed)
+    setEditing(false)
+  }
+
+  const cancel = () => { setVal(value); setEditing(false) }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-2 w-full">
+        <input
+          ref={inputRef}
+          className="flex-1 rounded-md border border-subtle bg-surface px-2 py-1 text-[13px] text-primary focus:outline-none focus:border-subtle-hover"
+          value={val}
+          onChange={e => setVal(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') save()
+            if (e.key === 'Escape') cancel()
+          }}
+        />
+        <button onClick={save} className="text-green-400 hover:text-green-300 transition-colors flex-shrink-0">
+          <Check size={13} />
+        </button>
+        <button onClick={cancel} className="text-faint hover:text-primary transition-colors flex-shrink-0">
+          <X size={13} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 group/title w-full min-w-0">
+      <p
+        className={cn("text-[13px] leading-snug text-primary flex-1 min-w-0", done && "line-through text-faint")}
+        onDoubleClick={() => !done && setEditing(true)}
+        title="Double-click to edit"
+      >
+        {value}
+      </p>
+      {!done && (
+        <button
+          onClick={() => setEditing(true)}
+          className="opacity-0 group-hover/title:opacity-100 text-faint hover:text-primary transition-all flex-shrink-0"
+        >
+          <Pencil size={10} />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function EditableSubtask({ sub, onSave, onToggle, onDelete }) {
+  const [editing, setEditing] = useState(false)
+  const [val, setVal]         = useState(sub.title)
+  const inputRef              = useRef()
+
+  useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+
+  const save = () => {
+    const trimmed = val.trim()
+    if (trimmed && trimmed !== sub.title) onSave(sub.id, trimmed)
+    setEditing(false)
+  }
+
+  const cancel = () => { setVal(sub.title); setEditing(false) }
+
+  return (
+    <div className="flex items-center gap-2 group/sub">
+      <button onClick={() => onToggle(sub.id)} className="flex-shrink-0 text-faint hover:text-green-400 transition-colors">
+        {sub.done ? <CheckSquare size={12} className="text-green-400" /> : <Square size={12} />}
+      </button>
+
+      {editing ? (
+        <>
+          <input
+            ref={inputRef}
+            className="flex-1 h-6 rounded border border-subtle bg-surface px-2 text-[11px] text-primary focus:outline-none focus:border-subtle-hover"
+            value={val}
+            onChange={e => setVal(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') save()
+              if (e.key === 'Escape') cancel()
+            }}
+          />
+          <button onClick={save} className="text-green-400 hover:text-green-300 transition-colors flex-shrink-0"><Check size={11} /></button>
+          <button onClick={cancel} className="text-faint hover:text-primary transition-colors flex-shrink-0"><X size={11} /></button>
+        </>
+      ) : (
+        <>
+          <span
+            className={cn("text-[11px] flex-1 min-w-0 cursor-pointer", sub.done ? "line-through text-faint" : "text-primary")}
+            onDoubleClick={() => !sub.done && setEditing(true)}
+            title="Double-click to edit"
+          >
+            {sub.title}
+          </span>
+          <div className="flex items-center gap-1 opacity-0 group-hover/sub:opacity-100 transition-all">
+            {!sub.done && (
+              <button onClick={() => setEditing(true)} className="text-faint hover:text-primary transition-colors">
+                <Pencil size={9} />
+              </button>
+            )}
+            <button onClick={() => onDelete(sub.id)} className="text-faint hover:text-red-400 transition-colors">
+              <X size={10} />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks, onEditTitle }) {
+  const [showNote, setShowNote] = useState(false)
+  const [noteVal,  setNoteVal]  = useState(task.note || '')
+  const [showSubs, setShowSubs] = useState(false)
+  const [newSub,   setNewSub]   = useState('')
+
+  const p        = PRIORITY_META[task.priority]
+  const s        = STATUS_META[task.status]
+  const others   = STATUS_CYCLE.filter(x => x !== task.status)
   const subtasks = task.subtasks || []
-  const subDone = subtasks.filter(s => s.done).length
+  const subDone  = subtasks.filter(s => s.done).length
 
   const addSubtask = () => {
     if (!newSub.trim()) return
-    const updated = [...subtasks, { id: uid(), title: newSub.trim(), done: false }]
-    onUpdateSubtasks(task.id, updated)
+    onUpdateSubtasks(task.id, [...subtasks, { id: uid(), title: newSub.trim(), done: false }])
     setNewSub('')
   }
 
   const toggleSubtask = (sid) => {
-    const updated = subtasks.map(s => s.id === sid ? { ...s, done: !s.done } : s)
-    onUpdateSubtasks(task.id, updated)
+    onUpdateSubtasks(task.id, subtasks.map(s => s.id === sid ? { ...s, done: !s.done } : s))
+  }
+
+  const editSubtask = (sid, newTitle) => {
+    onUpdateSubtasks(task.id, subtasks.map(s => s.id === sid ? { ...s, title: newTitle } : s))
   }
 
   const deleteSubtask = (sid) => {
@@ -41,7 +165,6 @@ export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onS
       task.done && "opacity-45",
       task.pinned && "border-amber-400/30 bg-amber-400/5"
     )}>
-      {/* Pin indicator */}
       {task.pinned && <span className="absolute top-2 right-2 text-amber-400 opacity-40"><Pin size={10} /></span>}
 
       {/* Checkbox */}
@@ -51,9 +174,13 @@ export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onS
 
       {/* Body */}
       <div className="flex-1 min-w-0">
-        <p className={cn("text-[13px] leading-snug text-primary", task.done && "line-through text-faint")}>
-          {task.title}
-        </p>
+
+        {/* Editable title */}
+        <EditableTitle
+          value={task.title}
+          done={task.done}
+          onSave={(newTitle) => onEditTitle(task.id, newTitle)}
+        />
 
         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
           <TaskChip tag={task.tag} />
@@ -68,10 +195,12 @@ export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onS
           )}
         </div>
 
-        {/* Note */}
+        {/* Note display */}
         {task.note && !showNote && (
           <p className="mt-2 text-[11px] text-faint border-l-2 border-subtle pl-2 leading-relaxed">{task.note}</p>
         )}
+
+        {/* Note editor */}
         {showNote && (
           <div className="mt-2">
             <textarea
@@ -87,23 +216,21 @@ export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onS
         )}
 
         {/* Subtasks */}
-        {(showSubs || subtasks.length === 0 && showSubs) && (
-          <div className="mt-3 space-y-1 animate-fade-in">
+        {showSubs && (
+          <div className="mt-3 space-y-1.5 animate-fade-in">
             {subtasks.map(sub => (
-              <div key={sub.id} className="flex items-center gap-2 group/sub">
-                <button onClick={() => toggleSubtask(sub.id)} className="flex-shrink-0 text-faint hover:text-green-400 transition-colors">
-                  {sub.done ? <CheckSquare size={12} className="text-green-400" /> : <Square size={12} />}
-                </button>
-                <span className={cn("text-[11px] flex-1 text-primary", sub.done && "line-through text-faint")}>{sub.title}</span>
-                <button onClick={() => deleteSubtask(sub.id)} className="opacity-0 group-hover/sub:opacity-100 text-faint hover:text-red-400 transition-all">
-                  <X size={10} />
-                </button>
-              </div>
+              <EditableSubtask
+                key={sub.id}
+                sub={sub}
+                onSave={editSubtask}
+                onToggle={toggleSubtask}
+                onDelete={deleteSubtask}
+              />
             ))}
             <div className="flex items-center gap-2 mt-2">
               <input
                 className="flex-1 h-6 rounded bg-surface border border-subtle px-2 text-[11px] text-primary placeholder:text-faint focus:outline-none focus:border-subtle-hover"
-                placeholder="add subtask..."
+                placeholder="add subtask... press Enter"
                 value={newSub}
                 onChange={e => setNewSub(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addSubtask()}
@@ -114,17 +241,17 @@ export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onS
         )}
       </div>
 
-      {/* Actions */}
+      {/* Actions on hover */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="icon" variant="ghost" onClick={() => setShowSubs(v => !v)}><Plus size={12} /></Button>
+            <Button size="icon" variant="ghost" onClick={() => { setShowSubs(v => !v) }}><Plus size={12} /></Button>
           </TooltipTrigger>
           <TooltipContent>Subtasks</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="icon" variant="ghost" onClick={() => { setNoteVal(task.note||''); setShowNote(n=>!n) }}><StickyNote size={12} /></Button>
+            <Button size="icon" variant="ghost" onClick={() => { setNoteVal(task.note||''); setShowNote(n => !n) }}><StickyNote size={12} /></Button>
           </TooltipTrigger>
           <TooltipContent>Note</TooltipContent>
         </Tooltip>
