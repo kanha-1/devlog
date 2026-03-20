@@ -13,7 +13,7 @@ const SECTIONS = [
   { key: 'done',       label: 'done'        },
 ]
 
-export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks, onCarryOver, yesterdayPendingCount }) {
+export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks, onEditTitle, onCarryOver, yesterdayPendingCount }) {
   const [goal,      setGoal]      = useState(getDailyGoal())
   const [editGoal,  setEditGoal]  = useState(false)
   const [goalInput, setGoalInput] = useState(String(getDailyGoal()))
@@ -40,18 +40,18 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
       {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <div className="rounded-xl border border-subtle bg-card px-4 py-3">
-          <p className="text-[9px] text-faint uppercase tracking-widest mb-1.5">total tasks</p>
+          <p className="text-xs text-faint uppercase tracking-widest mb-1.5">total tasks</p>
           <p className="font-display text-3xl font-bold tracking-tight text-primary">{total}</p>
           <div className="mt-2 h-0.5 rounded-full bg-elevated overflow-hidden">
             <div className="h-full bg-green-400 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-[10px] text-faint mt-1">{pct}% complete</p>
+          <p className="text-xs text-faint mt-1">{pct}% complete</p>
         </div>
 
         {/* Daily goal card */}
         <div className="rounded-xl border border-subtle bg-card px-4 py-3 relative">
           <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[9px] text-faint uppercase tracking-widest">daily goal</p>
+            <p className="text-xs text-faint uppercase tracking-widest">daily goal</p>
             <button onClick={() => { setEditGoal(true); setGoalInput(String(goal)) }} className="text-faint hover:text-primary transition-colors">
               <Edit2 size={10} />
             </button>
@@ -73,19 +73,19 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
           <div className="mt-2 h-0.5 rounded-full bg-elevated overflow-hidden">
             <div className={cn("h-full rounded-full transition-all duration-500", goalPct >= 100 ? "bg-green-400" : "bg-teal-400")} style={{ width: `${goalPct}%` }} />
           </div>
-          <p className="text-[10px] text-faint mt-1">{goalPct >= 100 ? '🎯 goal hit!' : `${goalPct}% of goal`}</p>
+          <p className="text-xs text-faint mt-1">{goalPct >= 100 ? '🎯 goal hit!' : `${goalPct}% of goal`}</p>
         </div>
 
         <div className="rounded-xl border border-subtle bg-card px-4 py-3">
-          <p className="text-[9px] text-faint uppercase tracking-widest mb-1.5">in progress</p>
+          <p className="text-xs text-faint uppercase tracking-widest mb-1.5">in progress</p>
           <p className={cn("font-display text-3xl font-bold tracking-tight", inprog > 0 ? "text-amber-400" : "text-primary")}>{inprog}</p>
-          <p className="text-[10px] text-faint mt-1">active now</p>
+          <p className="text-xs text-faint mt-1">active now</p>
         </div>
 
         <div className="rounded-xl border border-subtle bg-card px-4 py-3">
-          <p className="text-[9px] text-faint uppercase tracking-widest mb-1.5">high priority</p>
+          <p className="text-xs text-faint uppercase tracking-widest mb-1.5">high priority</p>
           <p className={cn("font-display text-3xl font-bold tracking-tight", highOpen > 0 ? "text-red-400" : "text-primary")}>{highOpen}</p>
-          <p className="text-[10px] text-faint mt-1">unresolved</p>
+          <p className="text-xs text-faint mt-1">unresolved</p>
         </div>
       </div>
 
@@ -117,12 +117,12 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
       {!loading && pinnedTasks.length > 0 && (
         <div className="mb-2">
           <div className="flex items-center gap-2 mb-2 mt-2">
-            <span className="text-[9px] font-medium uppercase tracking-widest text-amber-400">pinned</span>
+            <span className="text-xs font-medium uppercase tracking-widest text-amber-400">pinned</span>
             <div className="flex-1 h-px bg-amber-400/20" />
-            <span className="text-[9px] text-faint bg-elevated px-2 py-0.5 rounded-full">{pinnedTasks.length}</span>
+            <span className="text-xs text-faint bg-elevated px-2 py-0.5 rounded-full">{pinnedTasks.length}</span>
           </div>
           {pinnedTasks.map(t => (
-            <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} />
+            <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} />
           ))}
         </div>
       )}
@@ -135,12 +135,12 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
           return (
             <div key={sec.key} className="mb-2">
               <div className="flex items-center gap-2 mb-2 mt-5">
-                <span className="text-[9px] font-medium uppercase tracking-widest text-green-400">done</span>
+                <span className="text-xs font-medium uppercase tracking-widest text-green-400">done</span>
                 <div className="flex-1 h-px bg-subtle" />
-                <span className="text-[9px] text-faint bg-elevated px-2 py-0.5 rounded-full">{doneTasks.length}</span>
+                <span className="text-xs text-faint bg-elevated px-2 py-0.5 rounded-full">{doneTasks.length}</span>
               </div>
               {doneTasks.map(t => (
-                <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} />
+                <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} />
               ))}
             </div>
           )
@@ -150,12 +150,12 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
         return (
           <div key={sec.key} className="mb-2">
             <div className="flex items-center gap-2 mb-2 mt-5">
-              <span className={cn("text-[9px] font-medium uppercase tracking-widest", meta.color)}>{sec.label}</span>
+              <span className={cn("text-xs font-medium uppercase tracking-widest", meta.color)}>{sec.label}</span>
               <div className="flex-1 h-px bg-subtle" />
-              <span className="text-[9px] text-faint bg-elevated px-2 py-0.5 rounded-full">{secTasks.length}</span>
+              <span className="text-xs text-faint bg-elevated px-2 py-0.5 rounded-full">{secTasks.length}</span>
             </div>
             {secTasks.map(t => (
-              <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} />
+              <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} />
             ))}
           </div>
         )

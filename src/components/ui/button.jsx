@@ -1,8 +1,10 @@
+import { forwardRef } from "react"
 import { cn } from "@/lib/utils"
 
-export function Button({ className, variant = "default", size = "default", children, ...props }) {
+const Button = forwardRef(({ className, variant = "default", size = "default", children, ...props }, ref) => {
   return (
     <button
+      ref={ref}
       className={cn(
         "inline-flex items-center justify-center rounded-md font-mono text-xs font-medium transition-all focus-visible:outline-none disabled:opacity-50 active:scale-[0.98]",
         variant === "default"  && "bg-[var(--accent)] text-[var(--bg-primary)] hover:opacity-90",
@@ -20,4 +22,7 @@ export function Button({ className, variant = "default", size = "default", child
       {children}
     </button>
   )
-}
+})
+
+Button.displayName = "Button"
+export { Button }
