@@ -7,11 +7,31 @@ import { applyTheme, getTheme } from './lib/theme.js'
 // Apply saved theme immediately before first render (avoids flash)
 applyTheme(getTheme())
 
+// Ask for notification permission once on first visit
+function askNotificationPermission() {
+  if (!('Notification' in window)) return
+  if (Notification.permission === 'granted') return
+  if (Notification.permission === 'denied') return
+  if (localStorage.getItem('devlog-notif-asked')) return
+
+  setTimeout(() => {
+    Notification.requestPermission().then(result => {
+      localStorage.setItem('devlog-notif-asked', 'true')
+      if (result === 'granted') {
+        new Notification('devlog', {
+          body: "You're all set! Daily reminders are ready to configure.",
+          icon: '/icon-192.png',
+        })
+      }
+    })
+  }, 2000)
+}
+
+askNotificationPermission()
+
 // Register PWA service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // vite-plugin-pwa handles SW registration automatically in prod
-    // This is just a fallback log
     console.log('[devlog] PWA ready')
   })
 }
