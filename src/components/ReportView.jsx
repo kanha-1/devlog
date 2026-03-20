@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { toDateStr, todayStr, formatDate, formatDateShort, dateRange, TAG_META, cn } from "@/lib/utils"
 
+const TAG_BAR_COLOR = {
+  feat:   'rgba(96,165,250,0.5)',
+  bug:    'rgba(248,113,113,0.5)',
+  review: 'rgba(251,191,36,0.5)',
+  infra:  'rgba(45,212,191,0.5)',
+  meet:   'rgba(167,139,250,0.5)',
+  doc:    'rgba(74,222,128,0.5)',
+  other:  'rgba(161,161,170,0.5)',
+}
+
 const PRESETS = [
   { label: 'Last 7 days',  days: 7  },
   { label: 'Last 14 days', days: 14 },
@@ -134,7 +144,7 @@ export default function ReportView({ tasks }) {
       </div>
 
       {/* Tag breakdown chart */}
-      {Object.keys(tagBreakdown).length > 0 && (
+      {/* {Object.keys(tagBreakdown).length > 0 && (
         <div className="rounded-xl border border-subtle bg-card p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <BarChart2 size={13} className="text-faint" />
@@ -151,8 +161,8 @@ export default function ReportView({ tasks }) {
                   </div>
                   <div className="flex-1 h-4 rounded-full bg-elevated overflow-hidden">
                     <div
-                      className={cn("h-full rounded-full transition-all duration-700", meta.bg.replace('/10', '/40'))}
-                      style={{ width: `${(total/maxTagCount)*100}%` }}
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${(total/maxTagCount)*100}%`, background: TAG_BAR_COLOR[tag] || TAG_BAR_COLOR.other }}
                     />
                   </div>
                   <span className="text-[10px] text-faint w-16 text-right flex-shrink-0">{done}/{total} · {pct}%</span>
@@ -161,7 +171,7 @@ export default function ReportView({ tasks }) {
             })}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Day by day */}
       {rangeTasks.length > 0 ? (
