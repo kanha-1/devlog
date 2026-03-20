@@ -36,8 +36,12 @@ if ('serviceWorker' in navigator) {
   })
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 )
+
+// Hide the inline loading screen once React has mounted
+if (window.__hideLoader) window.__hideLoader()

@@ -13,7 +13,7 @@ const SECTIONS = [
   { key: 'done',       label: 'done'        },
 ]
 
-export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks, onEditTitle, onCarryOver, yesterdayPendingCount }) {
+export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks, onEditTitle, onUpdateEta, onCarryOver, yesterdayPendingCount }) {
   const [goal,      setGoal]      = useState(getDailyGoal())
   const [editGoal,  setEditGoal]  = useState(false)
   const [goalInput, setGoalInput] = useState(String(getDailyGoal()))
@@ -122,7 +122,7 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
             <span className="text-xs text-faint bg-elevated px-2 py-0.5 rounded-full">{pinnedTasks.length}</span>
           </div>
           {pinnedTasks.map(t => (
-            <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} />
+            <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} onUpdateEta={onUpdateEta} />
           ))}
         </div>
       )}
@@ -140,7 +140,7 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
                 <span className="text-xs text-faint bg-elevated px-2 py-0.5 rounded-full">{doneTasks.length}</span>
               </div>
               {doneTasks.map(t => (
-                <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} />
+                <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} onUpdateEta={onUpdateEta} />
               ))}
             </div>
           )
@@ -155,7 +155,7 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
               <span className="text-xs text-faint bg-elevated px-2 py-0.5 rounded-full">{secTasks.length}</span>
             </div>
             {secTasks.map(t => (
-              <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} />
+              <TaskItem key={t.id} task={t} onToggle={onToggle} onStatusChange={onStatusChange} onDelete={onDelete} onSaveNote={onSaveNote} onTogglePin={onTogglePin} onUpdateSubtasks={onUpdateSubtasks} onEditTitle={onEditTitle} onUpdateEta={onUpdateEta} />
             ))}
           </div>
         )

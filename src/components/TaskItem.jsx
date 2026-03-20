@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react"
-import { CheckSquare, Square, Trash2, StickyNote, Pin, PinOff, Plus, X, Pencil, Check } from "lucide-react"
+import { CheckSquare, Square, Trash2, StickyNote, Pin, PinOff, Plus, X, Pencil, Check, Clock } from "lucide-react"
 import TaskChip from "./TaskChip"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { PRIORITY_META, STATUS_META, cn, uid } from "@/lib/utils"
+import EtaBadge from "./EtaBadge"
 
 const STATUS_CYCLE = ['todo','inprogress','review','done']
 const STATUS_SHORT = { todo:'todo', inprogress:'wip', review:'review', done:'done' }
@@ -129,11 +130,13 @@ function EditableSubtask({ sub, onSave, onToggle, onDelete }) {
   )
 }
 
-export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks, onEditTitle }) {
-  const [showNote, setShowNote] = useState(false)
-  const [noteVal,  setNoteVal]  = useState(task.note || '')
-  const [showSubs, setShowSubs] = useState(false)
-  const [newSub,   setNewSub]   = useState('')
+export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onSaveNote, onTogglePin, onUpdateSubtasks, onEditTitle, onUpdateEta }) {
+  const [showNote,   setShowNote]   = useState(false)
+  const [noteVal,    setNoteVal]    = useState(task.note || '')
+  const [showSubs,   setShowSubs]   = useState(false)
+  const [newSub,     setNewSub]     = useState('')
+  const [editingEta, setEditingEta] = useState(false)
+  const [etaVal,     setEtaVal]     = useState(task.eta || '')
 
   const p        = PRIORITY_META[task.priority]
   const s        = STATUS_META[task.status]
@@ -193,7 +196,25 @@ export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onS
               {subDone}/{subtasks.length} subtasks
             </button>
           )}
+          <EtaBadge eta={task.eta} done={task.done} />
         </div>
+
+        {/* ETA editor */}
+        {editingEta && (
+          <div className="mt-2 flex items-center gap-2 animate-fade-in">
+            <Clock size={11} className="text-teal-400 flex-shrink-0" />
+            <span className="text-[10px] text-faint">ETA</span>
+            <input
+              type="datetime-local"
+              value={etaVal}
+              onChange={e => setEtaVal(e.target.value)}
+              className="flex-1 h-7 rounded border border-subtle bg-surface px-2 text-[11px] text-primary focus:outline-none focus:border-subtle-hover"
+              autoFocus
+            />
+            <Button size="xs" variant="outline" onClick={() => { onUpdateEta(task.id, etaVal || null); setEditingEta(false) }}>save</Button>
+            <Button size="xs" variant="ghost" onClick={() => { onUpdateEta(task.id, null); setEtaVal(''); setEditingEta(false) }}>clear</Button>
+          </div>
+        )}
 
         {/* Note display */}
         {task.note && !showNote && (
@@ -271,6 +292,14 @@ export default function TaskItem({ task, onToggle, onStatusChange, onDelete, onS
             <TooltipContent>Move to {STATUS_SHORT[st]}</TooltipContent>
           </Tooltip>
         ))}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size="icon" variant="ghost" onClick={() => { setEtaVal(task.eta || ''); setEditingEta(e => !e) }}>
+              <Clock size={12} className={task.eta ? 'text-teal-400' : ''} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{task.eta ? 'Edit ETA' : 'Set ETA'}</TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button size="icon" variant="danger" onClick={() => onDelete(task.id)}><Trash2 size={12} /></Button>

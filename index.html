@@ -3,25 +3,105 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>devlog</title>
+    <title>devlog — Daily Work Log</title>
+    <meta name="description" content="A developer's personal daily work log. Track tasks, generate standups, review your work history." />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0d0d0d" />
+
+    <!-- Theme color — switches with OS dark/light mode -->
+    <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
 
     <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="devlog" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
 
-    <!-- Splash screens for iOS (optional but nice) -->
-    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- iOS splash screens — covers iPhone SE → iPhone 15 Pro Max -->
+    <link rel="apple-touch-startup-image" href="/icon-512.png"
+      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="/icon-512.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/icon-512.png"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="/icon-512.png"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
+
+    <!-- Open Graph — for when you share the URL -->
+    <meta property="og:title" content="devlog — Daily Work Log" />
+    <meta property="og:description" content="A developer's personal daily work log. Track tasks, generate standups, review your work history." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icon-512.png" />
+
+    <!-- Twitter card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="devlog" />
+    <meta name="twitter:description" content="A developer's personal daily work log." />
+    <meta name="twitter:image" content="/icon-512.png" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Inline loading screen — shows before React mounts, avoids blank flash -->
+    <style>
+      #app-loader {
+        position: fixed; inset: 0;
+        background: #0d0d0d;
+        display: flex; align-items: center; justify-content: center;
+        flex-direction: column; gap: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        transition: opacity 0.3s ease;
+        z-index: 9999;
+      }
+      #app-loader .logo {
+        font-size: 28px; font-weight: 800;
+        color: #e8e0d0; letter-spacing: -0.03em;
+      }
+      #app-loader .dots {
+        display: flex; gap: 6px;
+      }
+      #app-loader .dot {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: #555250;
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      #app-loader .dot:nth-child(2) { animation-delay: 0.2s; }
+      #app-loader .dot:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; transform: scale(0.8); }
+        50%       { opacity: 1;   transform: scale(1);   }
+      }
+      @media (prefers-color-scheme: light) {
+        #app-loader { background: #fafaf9; }
+        #app-loader .logo { color: #1a1917; }
+      }
+    </style>
   </head>
   <body>
+    <!-- Loading screen — hidden once React mounts -->
+    <div id="app-loader">
+      <div class="logo">devlog</div>
+      <div class="dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+
     <div id="root"></div>
+
+    <script>
+      // Hide loader once React has mounted
+      window.__hideLoader = function() {
+        const loader = document.getElementById('app-loader')
+        if (loader) {
+          loader.style.opacity = '0'
+          setTimeout(() => loader.remove(), 300)
+        }
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

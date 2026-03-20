@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ChevronRight, ExternalLink } from "lucide-react"
 import TaskChip from "./TaskChip"
+import EtaBadge from "./EtaBadge"
 import { Button } from "@/components/ui/button"
 import { todayStr, formatDate, cn } from "@/lib/utils"
 
@@ -31,7 +32,7 @@ function DayCard({ date, tasks, onJump }) {
           </div>
           <span className="text-[10px] text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">{done} done</span>
           {total - done > 0 && (
-            <span className="text-[10px] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full hidden sm:inline">{total-done} open</span>
+            <span className="text-[10px] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full hidden sm:inline">{total - done} open</span>
           )}
           <span className="text-[10px] text-faint hidden sm:inline">{total} total</span>
           <ChevronRight size={13} className={cn("text-faint transition-transform", open && "rotate-90")} />
@@ -40,7 +41,7 @@ function DayCard({ date, tasks, onJump }) {
 
       {open && (
         <div className="border-t border-subtle px-4 py-2 animate-fade-in">
-          {tasks.sort((a,b) => a.done - b.done).map(t => (
+          {tasks.sort((a, b) => a.done - b.done).map(t => (
             <div key={t.id} className="flex items-center gap-2.5 py-1.5 border-b border-subtle last:border-0">
               <span className={cn("text-[11px] flex-shrink-0", t.done ? "text-green-400" : "text-faint")}>
                 {t.done ? "✓" : "○"}
@@ -50,6 +51,7 @@ function DayCard({ date, tasks, onJump }) {
                 {t.title}
               </span>
               <span className="text-[10px] text-faint flex-shrink-0 hidden sm:inline">{t.priority}</span>
+              {t.eta && <EtaBadge eta={t.eta} done={t.done} />}
             </div>
           ))}
         </div>
@@ -59,7 +61,7 @@ function DayCard({ date, tasks, onJump }) {
 }
 
 export default function HistoryView({ tasks, onJump }) {
-  const allDates  = [...new Set(tasks.map(t => t.date))].sort((a,b) => b.localeCompare(a))
+  const allDates  = [...new Set(tasks.map(t => t.date))].sort((a, b) => b.localeCompare(a))
   const totalEver = tasks.length
   const doneEver  = tasks.filter(t => t.done).length
 
@@ -82,7 +84,9 @@ export default function HistoryView({ tasks, onJump }) {
         ].map(item => (
           <div key={item.label} className="rounded-xl border border-subtle bg-card px-3 md:px-4 py-3">
             <p className="text-[9px] text-faint uppercase tracking-widest mb-1.5">{item.label}</p>
-            <p className={cn("font-display text-2xl md:text-3xl font-bold tracking-tight text-primary", item.cls)}>{item.value}</p>
+            <p className={cn("font-display text-2xl md:text-3xl font-bold tracking-tight text-primary", item.cls)}>
+              {item.value}
+            </p>
           </div>
         ))}
       </div>

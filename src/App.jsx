@@ -13,7 +13,7 @@ import LoginScreen from "./components/Loginscreen"
 import { loadTasks, saveTask, deleteTask as deleteStorage, isSupabaseConfigured } from "./lib/storage"
 import { todayStr, yesterdayStr, uid } from "./lib/utils"
 import { getTheme, toggleTheme, applyTheme } from "./lib/theme"
-import { scheduleDailyReminder, getReminderSettings } from "./lib/notifications"
+import { scheduleAllReminders, getReminderSettings, scheduleEtaReminders, clearEtaReminders, rescheduleAllEtaReminders } from "./lib/notifications"
 import { getSession, onAuthChange, signOut } from "./lib/auth"
 import { isSupabaseConfigured as sbConfigured } from "./lib/storage"
 
@@ -53,7 +53,8 @@ export default function App() {
       .then(data => {
         setTasks(data)
         const s = getReminderSettings()
-        if (s.enabled) scheduleDailyReminder(s.hour, s.minute, () => tasks)
+        if (Object.values(s).some(r => r.enabled)) scheduleAllReminders(s)
+        rescheduleAllEtaReminders(data)
       })
       .catch(() => setTasks([]))
       .finally(() => setLoading(false))
@@ -68,6 +69,7 @@ export default function App() {
     const task = { id: uid(), title, tag, priority, status: 'todo', date: selectedDate, done: false, note: '', pinned: false, subtasks: [], createdAt: Date.now() }
     const next = [...tasks, task]
     setTasks(next); await saveTask(task, next, userId)
+    if (task.eta) scheduleEtaReminders(task)
   }
 
   const toggleDone = async id => {
@@ -103,6 +105,15 @@ export default function App() {
   const updateSubtasks = async (id, subtasks) => {
     const next = tasks.map(t => t.id === id ? { ...t, subtasks } : t)
     setTasks(next); await saveTask(next.find(t => t.id === id), next, userId)
+  }
+
+  const updateEta = async (id, eta) => {
+    clearEtaReminders(id)
+    const next = tasks.map(t => t.id === id ? { ...t, eta } : t)
+    setTasks(next)
+    const updated = next.find(t => t.id === id)
+    await saveTask(updated, next, userId)
+    if (eta) scheduleEtaReminders(updated)
   }
 
   const carryOver = async () => {
@@ -209,7 +220,7 @@ export default function App() {
                 onAdd={addTask} onToggle={toggleDone} onStatusChange={setStatus}
                 onDelete={deleteTask} onSaveNote={saveNote}
                 onTogglePin={togglePin} onUpdateSubtasks={updateSubtasks}
-                onEditTitle={editTitle} onCarryOver={carryOver}
+                onEditTitle={editTitle} onUpdateEta={updateEta} onCarryOver={carryOver}
                 yesterdayPendingCount={selectedDate === todayStr() ? yesterdayPendingCount : 0}
               />
             )}
