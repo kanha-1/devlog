@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,6 @@
 
 @layer base {
   :root {
-    /* Dark theme tokens */
     --bg-primary:   #0d0d0d;
     --bg-card:      #141414;
     --bg-surface:   #1a1a1a;
@@ -21,17 +20,17 @@
   }
 
   .light {
-    --bg-primary:   #fafaf9;
-    --bg-card:      #ffffff;
-    --bg-surface:   #f4f3f1;
-    --bg-elevated:  #eae8e4;
-    --bg-hover:     #d6d3ce;
-    --text-primary: #1a1917;
-    --text-muted:   #5c5955;
-    --text-faint:   #9c9894;
-    --border:       rgba(0,0,0,0.07);
-    --border-hover: rgba(0,0,0,0.13);
-    --accent:       #1a1917;
+    --bg-primary:   #f5f0e8;
+    --bg-card:      #fdf8f2;
+    --bg-surface:   #ede8de;
+    --bg-elevated:  #e2dbd0;
+    --bg-hover:     #d4cdc0;
+    --text-primary: #2c2520;
+    --text-muted:   #6b5f54;
+    --text-faint:   #9c9088;
+    --border:       rgba(80,60,40,0.10);
+    --border-hover: rgba(80,60,40,0.18);
+    --accent:       #2c2520;
   }
 
   * {
@@ -42,7 +41,9 @@
   body {
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
 
