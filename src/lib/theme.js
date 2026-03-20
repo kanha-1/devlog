@@ -1,4 +1,3 @@
-// Theme management — persists to localStorage, syncs with <html> class
 export function getTheme() {
   return localStorage.getItem('devlog-theme') || 'dark'
 }
@@ -22,6 +21,13 @@ export function applyTheme(theme) {
 export function toggleTheme() {
   const current = getTheme()
   const next = current === 'dark' ? 'light' : 'dark'
+
+  // Briefly disable pointer events so user can't double-click mid-transition
+  document.documentElement.style.pointerEvents = 'none'
   setTheme(next)
+  setTimeout(() => {
+    document.documentElement.style.pointerEvents = ''
+  }, 380)
+
   return next
 }

@@ -20,22 +20,44 @@
   }
 
   .light {
-    --bg-primary:   #f5f0e8;
-    --bg-card:      #fdf8f2;
-    --bg-surface:   #ede8de;
-    --bg-elevated:  #e2dbd0;
-    --bg-hover:     #d4cdc0;
-    --text-primary: #2c2520;
-    --text-muted:   #6b5f54;
-    --text-faint:   #9c9088;
-    --border:       rgba(80,60,40,0.10);
-    --border-hover: rgba(80,60,40,0.18);
-    --accent:       #2c2520;
+    --bg-primary:   #f0ebe2;
+    --bg-card:      #f8f3ec;
+    --bg-surface:   #e8e2d8;
+    --bg-elevated:  #ddd7cc;
+    --bg-hover:     #cfc9bc;
+    --text-primary: #28211a;
+    --text-muted:   #6b5f52;
+    --text-faint:   #a09488;
+    --border:       rgba(60,40,20,0.09);
+    --border-hover: rgba(60,40,20,0.16);
+    --accent:       #28211a;
   }
 
   * {
     border-color: var(--border);
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  /* Smooth theme transition on everything */
+  *, *::before, *::after {
+    transition:
+      background-color 0.35s ease-in-out,
+      color 0.35s ease-in-out,
+      border-color 0.35s ease-in-out,
+      fill 0.35s ease-in-out,
+      stroke 0.35s ease-in-out,
+      box-shadow 0.35s ease-in-out,
+      opacity 0.35s ease-in-out;
+  }
+
+  /* But don't slow down interactive elements */
+  button, a, input, select, textarea, [role="button"] {
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease,
+      opacity 0.15s ease,
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
   }
 
   body {

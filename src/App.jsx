@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
@@ -46,27 +46,37 @@ export default function App() {
   }, [])
 
   // Load tasks once session is known
-  useEffect(() => {
-    if (session === undefined) return // still loading auth
-    setLoading(true)
-    loadTasks()
-      .then(data => {
-        setTasks(data)
-        const s = getReminderSettings()
-        if (Object.values(s).some(r => r.enabled)) scheduleAllReminders(s)
-        rescheduleAllEtaReminders(data)
-      })
-      .catch(() => setTasks([]))
-      .finally(() => setLoading(false))
-  }, [session])
+  // Load tasks once — only when session user ID actually changes
+const prevUserIdRef = useRef(undefined)
+
+useEffect(() => {
+  if (session === undefined) return
+
+  const newUserId = session?.user?.id || null
+
+  // Skip if same user — prevents reload on tab focus/Supabase reconnect
+  if (prevUserIdRef.current === newUserId) return
+  prevUserIdRef.current = newUserId
+
+  setLoading(true)
+  loadTasks()
+    .then(data => {
+      setTasks(data)
+      const s = getReminderSettings()
+      if (Object.values(s).some(r => r.enabled)) scheduleAllReminders(s)
+      rescheduleAllEtaReminders(data)
+    })
+    .catch(() => setTasks([]))
+    .finally(() => setLoading(false))
+}, [session])
 
   const userId = session?.user?.id || null
 
   const handleToggleTheme = () => { const next = toggleTheme(); setTheme(next) }
 
   // Mutations
-  const addTask = async ({ title, tag, priority }) => {
-    const task = { id: uid(), title, tag, priority, status: 'todo', date: selectedDate, done: false, note: '', pinned: false, subtasks: [], createdAt: Date.now() }
+  const addTask = async ({ title, tag, priority, eta }) => {
+    const task = { id: uid(), title, tag, priority, status: 'todo', date: selectedDate, done: false, note: '', pinned: false, subtasks: [], eta: eta || null, createdAt: Date.now() }
     const next = [...tasks, task]
     setTasks(next); await saveTask(task, next, userId)
     if (task.eta) scheduleEtaReminders(task)
