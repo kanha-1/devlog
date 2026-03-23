@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ArrowLeftRight, Target, Edit2, Check } from "lucide-react"
 import AddTaskBar from "./AddTaskBar"
+import UpcomingEtas from "./UpcomingEtas"
 import TaskItem from "./TaskItem"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
@@ -94,7 +95,7 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
         <div className="flex items-center justify-between rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-2.5 mb-4 animate-fade-in">
           <div className="flex items-center gap-2">
             <ArrowLeftRight size={13} className="text-amber-400" />
-            <span className="text-[12px] text-amber-400 font-medium">{yesterdayPendingCount} unfinished task{yesterdayPendingCount > 1 ? 's' : ''} from yesterday</span>
+            <span className="text-[12px] text-amber-400 font-medium">{yesterdayPendingCount} unfinished task{yesterdayPendingCount > 1 ? 's' : ''} from previous days</span>
           </div>
           <Button size="xs" variant="outline" onClick={onCarryOver} className="border-amber-400/30 text-amber-400 hover:bg-amber-400/10">
             carry over
@@ -103,6 +104,8 @@ export default function TodayView({ tasks, loading, onAdd, onToggle, onStatusCha
       )}
 
       <AddTaskBar onAdd={onAdd} />
+
+      <UpcomingEtas tasks={tasks} />
 
       {loading && <div className="text-center py-12 text-faint text-xs">loading tasks...</div>}
 

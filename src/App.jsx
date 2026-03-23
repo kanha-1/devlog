@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import { RefreshCw } from "lucide-react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
@@ -10,6 +11,8 @@ import SummaryModal from "./components/SummaryModal"
 import StandupModal from "./components/StandupModal"
 import NotificationSettings from "./components/NotificationSettings"
 import LoginScreen from "./components/Loginscreen"
+import ToastContainer, { toast } from "./components/Toast"
+import ScratchpadView from "./components/ScratchpadView"
 import { loadTasks, saveTask, deleteTask as deleteStorage, isSupabaseConfigured } from "./lib/storage"
 import { todayStr, yesterdayStr, uid } from "./lib/utils"
 import { getTheme, toggleTheme, applyTheme } from "./lib/theme"
@@ -18,9 +21,11 @@ import { getSession, onAuthChange, signOut } from "./lib/auth"
 import { isSupabaseConfigured as sbConfigured } from "./lib/storage"
 
 export default function App() {
-  const [session,           setSession]           = useState(undefined) // undefined = loading
+  const [session,           setSession]           = useState(undefined)
   const [tasks,             setTasks]             = useState([])
   const [loading,           setLoading]           = useState(true)
+  const [refreshing,        setRefreshing]        = useState(false)
+  const [isOffline,         setIsOffline]         = useState(!navigator.onLine)
   const [view,              setView]              = useState('today')
   const [tagFilter,         setTagFilter]         = useState('all')
   const [selectedDate,      setSelectedDate]      = useState(todayStr())
@@ -32,89 +37,133 @@ export default function App() {
   const [theme,             setTheme]             = useState(getTheme())
   const [showMobileSearch,  setShowMobileSearch]  = useState(false)
 
+  const prevUserIdRef  = useRef(undefined)
+  const lastVisibleRef = useRef(Date.now())
+
   useEffect(() => { applyTheme(theme) }, [])
 
-  // Auth state
+  // ── Online / offline detection ──────────────────────────────────────────────
   useEffect(() => {
-    if (!sbConfigured) {
-      setSession(null) // no supabase — skip auth
-      return
-    }
+    const goOnline  = () => { setIsOffline(false); toast.success("Back online — syncing..."); fetchTasks() }
+    const goOffline = () => { setIsOffline(true);  toast.offline("You're offline — changes won't save") }
+    window.addEventListener('online',  goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => { window.removeEventListener('online', goOnline); window.removeEventListener('offline', goOffline) }
+  }, [])
+
+  // ── Auth state ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!sbConfigured) { setSession(null); return }
     getSession().then(s => setSession(s))
     const { data: { subscription } } = onAuthChange(s => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
-  // Load tasks once session is known
-  // Load tasks once — only when session user ID actually changes
-const prevUserIdRef = useRef(undefined)
-
-useEffect(() => {
-  if (session === undefined) return
-
-  const newUserId = session?.user?.id || null
-
-  // Skip if same user — prevents reload on tab focus/Supabase reconnect
-  if (prevUserIdRef.current === newUserId) return
-  prevUserIdRef.current = newUserId
-
-  setLoading(true)
-  loadTasks()
-    .then(data => {
+  // ── Load tasks (only when user actually changes) ────────────────────────────
+  const fetchTasks = useCallback(async (showRefreshing = false) => {
+    if (showRefreshing) setRefreshing(true)
+    try {
+      const data = await loadTasks()
       setTasks(data)
       const s = getReminderSettings()
       if (Object.values(s).some(r => r.enabled)) scheduleAllReminders(s)
       rescheduleAllEtaReminders(data)
-    })
-    .catch(() => setTasks([]))
-    .finally(() => setLoading(false))
-}, [session])
+    } catch (err) {
+      toast.error("Failed to load tasks — check your connection")
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session === undefined) return
+    const newUserId = session?.user?.id || null
+    if (prevUserIdRef.current === newUserId) return
+    prevUserIdRef.current = newUserId
+    setLoading(true)
+    fetchTasks()
+  }, [session])
+
+  // ── Auto-refresh on tab focus if away > 5 mins ──────────────────────────────
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        lastVisibleRef.current = Date.now()
+      } else {
+        const awayMs = Date.now() - lastVisibleRef.current
+        if (awayMs > 5 * 60 * 1000) { // 5 minutes
+          toast.success("Welcome back — refreshing tasks...")
+          fetchTasks(true)
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [fetchTasks])
 
   const userId = session?.user?.id || null
-
   const handleToggleTheme = () => { const next = toggleTheme(); setTheme(next) }
 
-  // Mutations
+  // ── Mutations ───────────────────────────────────────────────────────────────
   const addTask = async ({ title, tag, priority, eta }) => {
     const task = { id: uid(), title, tag, priority, status: 'todo', date: selectedDate, done: false, note: '', pinned: false, subtasks: [], eta: eta || null, createdAt: Date.now() }
     const next = [...tasks, task]
-    setTasks(next); await saveTask(task, next, userId)
-    if (task.eta) scheduleEtaReminders(task)
+    setTasks(next)
+    try {
+      await saveTask(task, next, userId)
+      if (task.eta) scheduleEtaReminders(task)
+    } catch { toast.error("Failed to save task — check your connection") }
   }
 
   const toggleDone = async id => {
     const next = tasks.map(t => t.id === id ? { ...t, done: !t.done, status: !t.done ? 'done' : 'todo' } : t)
-    setTasks(next); await saveTask(next.find(t => t.id === id), next, userId)
+    setTasks(next)
+    try { await saveTask(next.find(t => t.id === id), next, userId) }
+    catch { toast.error("Failed to update task"); setTasks(tasks) }
   }
 
   const setStatus = async (id, status) => {
     const next = tasks.map(t => t.id === id ? { ...t, status, done: status === 'done' } : t)
-    setTasks(next); await saveTask(next.find(t => t.id === id), next, userId)
+    setTasks(next)
+    try { await saveTask(next.find(t => t.id === id), next, userId) }
+    catch { toast.error("Failed to update status"); setTasks(tasks) }
   }
 
   const deleteTask = async id => {
+    const prev = tasks
     const next = tasks.filter(t => t.id !== id)
-    setTasks(next); await deleteStorage(id, next)
+    setTasks(next)
+    try { await deleteStorage(id, next) }
+    catch { toast.error("Failed to delete task"); setTasks(prev) }
   }
 
   const saveNote = async (id, note) => {
     const next = tasks.map(t => t.id === id ? { ...t, note } : t)
-    setTasks(next); await saveTask(next.find(t => t.id === id), next, userId)
+    setTasks(next)
+    try { await saveTask(next.find(t => t.id === id), next, userId) }
+    catch { toast.error("Failed to save note") }
   }
 
   const editTitle = async (id, title) => {
     const next = tasks.map(t => t.id === id ? { ...t, title } : t)
-    setTasks(next); await saveTask(next.find(t => t.id === id), next, userId)
+    setTasks(next)
+    try { await saveTask(next.find(t => t.id === id), next, userId) }
+    catch { toast.error("Failed to update title") }
   }
 
   const togglePin = async id => {
     const next = tasks.map(t => t.id === id ? { ...t, pinned: !t.pinned } : t)
-    setTasks(next); await saveTask(next.find(t => t.id === id), next, userId)
+    setTasks(next)
+    try { await saveTask(next.find(t => t.id === id), next, userId) }
+    catch { toast.error("Failed to update pin") }
   }
 
   const updateSubtasks = async (id, subtasks) => {
     const next = tasks.map(t => t.id === id ? { ...t, subtasks } : t)
-    setTasks(next); await saveTask(next.find(t => t.id === id), next, userId)
+    setTasks(next)
+    try { await saveTask(next.find(t => t.id === id), next, userId) }
+    catch { toast.error("Failed to update subtasks") }
   }
 
   const updateEta = async (id, eta) => {
@@ -122,36 +171,49 @@ useEffect(() => {
     const next = tasks.map(t => t.id === id ? { ...t, eta } : t)
     setTasks(next)
     const updated = next.find(t => t.id === id)
-    await saveTask(updated, next, userId)
-    if (eta) scheduleEtaReminders(updated)
+    try {
+      await saveTask(updated, next, userId)
+      if (eta) scheduleEtaReminders(updated)
+    } catch { toast.error("Failed to update ETA") }
   }
 
   const carryOver = async () => {
-    const yesterday = yesterdayStr()
-    const pending = tasks.filter(t => t.date === yesterday && !t.done)
-    const alreadyCarried = new Set(tasks.filter(t => t.date === todayStr()).map(t => t.title))
-    const toAdd = pending.filter(t => !alreadyCarried.has(t.title)).map(t => ({
-      ...t, id: uid(), date: todayStr(), done: false, status: 'todo', createdAt: Date.now()
-    }))
-    if (!toAdd.length) {
-      // Nothing new to carry — just mark yesterday tasks as carried to hide banner
-      const marked = tasks.map(t =>
-        t.date === yesterday && !t.done ? { ...t, carried: true } : t
-      )
-      setTasks(marked)
-      await Promise.all(marked.filter(t => t.date === yesterday && t.carried).map(t => saveTask(t, marked)))
+    const today          = todayStr()
+    const todayTasks     = tasks.filter(t => t.date === today)
+    const pending        = tasks.filter(t => t.date < today && !t.done && !t.carried)
+    const existingTitles = new Set(todayTasks.map(t => t.title.trim().toLowerCase()))
+    const toCarry = pending.filter(t => !existingTitles.has(t.title.trim().toLowerCase()))
+
+    if (!toCarry.length) {
+      toast.success("Nothing new to carry over")
       return
     }
-    // Mark yesterday tasks as carried + add copies to today
-    const marked = tasks.map(t =>
-      t.date === yesterday && !t.done ? { ...t, carried: true } : t
+
+    // Mark original past tasks as carried (so banner won't show them again)
+    const markedOriginals = tasks.map(t =>
+      toCarry.find(c => c.id === t.id) ? { ...t, carried: true } : t
     )
-    const next = [...marked, ...toAdd]
+
+    // Create fresh copies for today
+    const newCopies = toCarry.map(t => ({
+      ...t,
+      id: uid(),
+      date: today,
+      done: false,
+      status: 'todo',
+      carried: false,
+      createdAt: Date.now()
+    }))
+
+    const next = [...markedOriginals, ...newCopies]
     setTasks(next)
-    await Promise.all([
-      ...marked.filter(t => t.date === yesterday && t.carried).map(t => saveTask(t, next)),
-      ...toAdd.map(t => saveTask(t, next))
-    ])
+    try {
+      await Promise.all([
+        ...toCarry.map(t => saveTask({ ...t, carried: true }, next, userId)),
+        ...newCopies.map(t => saveTask(t, next, userId)),
+      ])
+      toast.success(`${newCopies.length} task${newCopies.length > 1 ? 's' : ''} carried over`)
+    } catch { toast.error("Failed to carry over tasks") }
   }
 
   const filteredTasks = useMemo(() => {
@@ -164,8 +226,8 @@ useEffect(() => {
     return t
   }, [tasks, selectedDate, tagFilter, search])
 
-  const yesterdayPendingCount = useMemo(() =>
-    tasks.filter(t => t.date === yesterdayStr() && !t.done).length
+  const pastPendingCount = useMemo(() =>
+    tasks.filter(t => t.date < todayStr() && !t.done && !t.carried).length
   , [tasks])
 
   const exportData = () => {
@@ -174,7 +236,7 @@ useEffect(() => {
     a.download = `devlog-export-${todayStr()}.json`; a.click()
   }
 
-  // Still checking auth
+  // ── Auth loading ────────────────────────────────────────────────────────────
   if (session === undefined) {
     return (
       <div className="min-h-screen bg-primary flex items-center justify-center">
@@ -183,18 +245,14 @@ useEffect(() => {
     )
   }
 
-  // Not logged in and Supabase is configured — show login
-  if (!session && sbConfigured) {
-    return <LoginScreen />
-  }
+  if (!session && sbConfigured) return <LoginScreen />
 
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex h-screen overflow-hidden bg-primary">
         <Sidebar
           view={view} tagFilter={tagFilter} selectedDate={selectedDate}
-          tasks={tasks} isSupabase={isSupabaseConfigured}
-          session={session}
+          tasks={tasks} isSupabase={isSupabaseConfigured} session={session}
           onViewChange={setView} onTagFilter={setTagFilter}
           onSelectDate={d => { setSelectedDate(d); setView('today') }}
           mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)}
@@ -210,6 +268,9 @@ useEffect(() => {
             onExport={exportData} theme={theme}
             onToggleTheme={handleToggleTheme}
             onOpenSettings={() => setShowNotifSettings(true)}
+            isOffline={isOffline}
+            isRefreshing={refreshing}
+            onRefresh={() => fetchTasks(true)}
           />
 
           {showMobileSearch && (
@@ -230,8 +291,9 @@ useEffect(() => {
                 onAdd={addTask} onToggle={toggleDone} onStatusChange={setStatus}
                 onDelete={deleteTask} onSaveNote={saveNote}
                 onTogglePin={togglePin} onUpdateSubtasks={updateSubtasks}
-                onEditTitle={editTitle} onUpdateEta={updateEta} onCarryOver={carryOver}
-                yesterdayPendingCount={selectedDate === todayStr() ? yesterdayPendingCount : 0}
+                onEditTitle={editTitle} onUpdateEta={updateEta}
+                onCarryOver={carryOver}
+                yesterdayPendingCount={selectedDate === todayStr() ? pastPendingCount : 0}
               />
             )}
             {view === 'history' && (
@@ -240,7 +302,8 @@ useEffect(() => {
                 onJump={d => { setSelectedDate(d); setView('today') }}
               />
             )}
-            {view === 'report' && <ReportView tasks={tasks} />}
+            {view === 'report'      && <ReportView tasks={tasks} />}
+            {view === 'scratchpad'  && <ScratchpadView />}
           </main>
         </div>
 
@@ -253,6 +316,7 @@ useEffect(() => {
           open={showSummary} onClose={() => setShowSummary(false)} />
         <StandupModal open={showStandup} onClose={() => setShowStandup(false)} tasks={tasks} />
         <NotificationSettings open={showNotifSettings} onClose={() => setShowNotifSettings(false)} getTasks={() => tasks} />
+        <ToastContainer />
       </div>
     </TooltipProvider>
   )
