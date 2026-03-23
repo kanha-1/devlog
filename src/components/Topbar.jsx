@@ -1,10 +1,10 @@
-import { Search, FileDown, LayoutList, Sun, Moon, Bell, Zap } from "lucide-react"
+import { Search, FileDown, LayoutList, Sun, Moon, Bell, Zap, WifiOff, RefreshCw } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { todayStr, formatDate } from "@/lib/utils"
 
-export default function Topbar({ selectedDate, tasks, view, search, onSearch, onSummary, onExport, theme, onToggleTheme, onOpenSettings, onStandup }) {
+export default function Topbar({ selectedDate, tasks, view, search, onSearch, onSummary, onExport, theme, onToggleTheme, onOpenSettings, onStandup, isOffline, isRefreshing, onRefresh }) {
   const isToday  = selectedDate === todayStr()
   const dayTasks = tasks.filter(t => t.date === selectedDate)
   const done     = dayTasks.filter(t => t.done).length
@@ -51,6 +51,22 @@ export default function Topbar({ selectedDate, tasks, view, search, onSearch, on
             <Button size="icon" variant="outline" onClick={onOpenSettings}><Bell size={13} /></Button>
           </TooltipTrigger>
           <TooltipContent>Notifications</TooltipContent>
+        </Tooltip>
+
+        {isOffline && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-400/10 border border-amber-400/20">
+            <WifiOff size={11} className="text-amber-400" />
+            <span className="text-[10px] text-amber-400 hidden sm:inline">offline</span>
+          </div>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size="icon" variant="outline" onClick={onRefresh} disabled={isRefreshing}>
+              <RefreshCw size={13} className={isRefreshing ? "animate-spin" : ""} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Refresh tasks</TooltipContent>
         </Tooltip>
 
         <Tooltip>

@@ -1,12 +1,13 @@
-import { CalendarDays, History, Menu, Search, BarChart2 } from "lucide-react"
+import { CalendarDays, History, Menu, Search, BarChart2, Lightbulb } from "lucide-react"
 import { cn, todayStr } from "@/lib/utils"
 
 export default function BottomNav({ view, tasks, onViewChange, onMenuOpen, onSearchOpen }) {
   const todayOpen = tasks.filter(t => t.date === todayStr() && !t.done).length
   const tabs = [
-    { id: 'today',   label: 'Today',   icon: CalendarDays, badge: todayOpen },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'report',  label: 'Report',  icon: BarChart2 },
+    { id: 'today',      label: 'Today',   icon: CalendarDays, badge: todayOpen },
+    { id: 'history',    label: 'History', icon: History },
+    { id: 'report',     label: 'Report',  icon: BarChart2 },
+    { id: 'scratchpad', label: 'Ideas',   icon: Lightbulb },
   ]
 
   return (

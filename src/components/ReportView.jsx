@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { FileDown, Copy, Check, BarChart2, Calendar } from "lucide-react"
+import { FileDown, Copy, Check, BarChart2, Calendar, Printer } from "lucide-react"
 import TaskChip from "./TaskChip"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -13,6 +13,51 @@ const TAG_BAR_COLOR = {
   meet:   'rgba(167,139,250,0.5)',
   doc:    'rgba(74,222,128,0.5)',
   other:  'rgba(161,161,170,0.5)',
+}
+
+function buildHtmlForPdf(from, to, rangeTasks, tagBreakdown, dates) {
+  const pct = rangeTasks.length ? Math.round(rangeTasks.filter(t=>t.done).length/rangeTasks.length*100) : 0
+  let rows = ''
+  dates.forEach(date => {
+    const dayTasks = rangeTasks.filter(t => t.date === date)
+    if (!dayTasks.length) return
+    const doneCnt = dayTasks.filter(t => t.done).length
+    rows += `<div class="day"><div class="day-header"><span>${formatDate(date)}</span><span>${doneCnt}/${dayTasks.length} done</span></div>`
+    dayTasks.sort((a,b)=>a.done-b.done).forEach(t => {
+      const sub = (t.subtasks||[]).map(s => `<div class="sub ${s.done?'done':''}">${s.done?'✓':'○'} ${s.title}</div>`).join('')
+      rows += `<div class="task ${t.done?'done':''}"><span class="tag">${t.tag}</span> ${t.title}${sub}</div>`
+    })
+    rows += `</div>`
+  })
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+  <title>devlog Report ${formatDateShort(from)} to ${formatDateShort(to)}</title>
+  <style>
+    body{font-family:monospace;padding:32px;max-width:800px;margin:0 auto;color:#1a1917;background:#fff}
+    h1{font-size:22px;margin-bottom:4px}
+    .meta{color:#6b5f52;font-size:13px;margin-bottom:24px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+    .stat{background:#f0ebe2;border-radius:8px;padding:12px 16px}
+    .stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9c9088;margin-bottom:4px}
+    .stat-val{font-size:26px;font-weight:700}
+    .day{margin-bottom:20px;border:1px solid #e8e2d8;border-radius:8px;overflow:hidden}
+    .day-header{display:flex;justify-content:space-between;padding:8px 14px;background:#f0ebe2;font-size:12px;font-weight:600}
+    .task{padding:6px 14px;font-size:12px;border-bottom:1px solid #f0ebe2}
+    .task.done{color:#9c9088;text-decoration:line-through}
+    .tag{background:#e8e2d8;border-radius:4px;padding:1px 6px;font-size:10px;margin-right:6px}
+    .sub{padding:2px 14px 2px 28px;font-size:11px;color:#6b5f52}
+    .sub.done{text-decoration:line-through;color:#9c9088}
+    @media print{body{padding:16px}.day{break-inside:avoid}}
+  </style></head><body>
+  <h1>devlog — Work Log Report</h1>
+  <div class="meta">${formatDateShort(from)} → ${formatDateShort(to)} · ${rangeTasks.length} tasks · ${pct}% completed</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val">${rangeTasks.length}</div></div>
+    <div class="stat"><div class="stat-label">Completed</div><div class="stat-val" style="color:#2d6a4f">${rangeTasks.filter(t=>t.done).length}</div></div>
+    <div class="stat"><div class="stat-label">Completion</div><div class="stat-val">${pct}%</div></div>
+  </div>
+  ${rows}
+  </body></html>`
 }
 
 const PRESETS = [
@@ -94,6 +139,14 @@ export default function ReportView({ tasks }) {
     a.download = `devlog-report-${from}-to-${to}.md`; a.click()
   }
 
+  const downloadPdf = () => {
+    const html = buildHtmlForPdf(from, to, rangeTasks, tagBreakdown, dates)
+    const blob = new Blob([html], { type: 'text/html' })
+    const url  = URL.createObjectURL(blob)
+    const win  = window.open(url, '_blank')
+    if (win) setTimeout(() => win.print(), 800)
+  }
+
   return (
     <div className="animate-fade-in">
       {/* Date range picker */}
@@ -144,7 +197,7 @@ export default function ReportView({ tasks }) {
       </div>
 
       {/* Tag breakdown chart */}
-      {/* {Object.keys(tagBreakdown).length > 0 && (
+      {Object.keys(tagBreakdown).length > 0 && (
         <div className="rounded-xl border border-subtle bg-card p-4 mb-4">
           <div className="flex items-center gap-2 mb-3">
             <BarChart2 size={13} className="text-faint" />
@@ -171,7 +224,7 @@ export default function ReportView({ tasks }) {
             })}
           </div>
         </div>
-      )} */}
+      )}
 
       {/* Day by day */}
       {rangeTasks.length > 0 ? (
@@ -222,6 +275,9 @@ export default function ReportView({ tasks }) {
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={downloadMarkdown}>
             <FileDown size={11} /> download .md
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={downloadPdf}>
+            <Printer size={11} /> export PDF
           </Button>
         </div>
       )}

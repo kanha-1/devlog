@@ -98,6 +98,9 @@ export default function Sidebar({
           <NavItem active={view==='report'} onClick={() => { onViewChange('report'); onMobileClose?.() }} dot="bg-blue-400">
             Report
           </NavItem>
+          <NavItem active={view==='scratchpad'} onClick={() => { onViewChange('scratchpad'); onMobileClose?.() }} dot="bg-pink-400">
+            Scratchpad
+          </NavItem>
         </div>
 
         <Separator className="my-2" />
